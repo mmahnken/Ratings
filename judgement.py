@@ -15,12 +15,30 @@ def create_new():
 #accepts, adds, and commits new user info
 @app.route("/save_user", methods=["POST"])
 def save_new_user():
-	new = request.form['email']
-	new_person = model.User(email= new, password = "password", age="age", zipcode="zipcode")
+	new_person = model.User(email=request.form["email"], password=request.form["password"], age=request.form["age"], zipcode=request.form["zipcode"])
 	model.session.add(new_person)
 	model.session.commit()
+	q = new_person.email
+	return render_template("save_user.html", newperson = q)
 
-	return render_template("save_user.html", newperson = new_person)
+@app.route("/login", methods=["POST", "GET"])
+def login():
+	return render_template("login.html")
+
+@app.route("/authenticate", methods=["POST"])
+def authenticate():
+	user_email = request.form["email"]
+	user_password = request.form["password"]
+	u = model.session.query(model.User).filter_by(email = user_email).first()
+	if u.password == user_password:
+		return render_template("user_home.html")
+	else:
+		return render_template("user_not_found.html")
+
+	
+
+
+
 
 if __name__ == "__main__":
 	app.run(debug  = True)
