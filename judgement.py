@@ -1,6 +1,13 @@
-from flask import Flask, render_template, redirect, request
+from flask import Flask, render_template, redirect, request, session, g
 import model
 app = Flask(__name__)
+
+@app.before_request
+def before_request():
+	if 'id' in session:
+		g.user = session.query(Users).get(session['id'])
+	else:
+		return render_template("login.html")
 
 @app.route("/all_users")
 def all_users():
@@ -31,6 +38,7 @@ def authenticate():
 	user_password = request.form["password"]
 	u = model.session.query(model.User).filter_by(email = user_email).first()
 	if u.password == user_password:
+		session['id'] = u.id
 		return render_template("user_home.html")
 	else:
 		return render_template("user_not_found.html")
