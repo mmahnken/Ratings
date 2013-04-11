@@ -33,15 +33,29 @@ class User(Base):
 			u_ratings[r.movie_id] = r 
 
 		for r in other.ratings:
-			u_r = u_ratings.get(r.movie.id)
+			u_r = u_ratings.get(r.movie_id)
 			if u_r:
-				paired_ratings.append( (u_r.rating, r.ratings) )
+				paired_ratings.append( (u_r.rating, r.rating) )
 
 		if paired_ratings:
 			return correlation.pearson(paired_ratings)
 		else:
-			return 0.0    o
+			return 0.0
 
+	def predict_rating(self, movie):
+		ratings = self.ratings
+		other_ratings = movie.ratings
+		other_users = [ r.user for r in other_ratings ]
+		similarities = [ (self.similarity(r.user), r) \
+				for r in other_ratings ]
+		similarities.sort(reverse=True)
+		similarities = [ sim for sim in similarities if sim[0] > 0 ]
+		if not similarities:
+			return None
+		numerator = sum([ r.rating * similarity for similarity, r in similarities ])
+		denominator = sum([ similarity[0] for similarity in similarities ])
+		top_user = similarities[0]
+		return numerator/denominator
 
 class Movie(Base):
 	__tablename__ = "Movies"

@@ -43,6 +43,48 @@ def authenticate():
 	else:
 		return render_template("user_not_found.html")
 
+@app.route("/movie/<int:id>", methods =["GET"])
+def view_movie(id):
+	movie = db_session.query(Movie).get(id)
+	ratings = movie.ratings
+	rating_nums = []
+	user_rating = None
+	for r in ratings:
+		if r.user_id == session['user_id']:
+			user_rating = r
+		rating_nums.append(r.rating)
+	avg_rating = float(sum(rating_nums))/len(rating_nums)
+
+	#prediction code: only predict if the user hasn't rated it.
+	user = db_session.query(User).get(session['user_id'])
+	prediction = None
+	if not user_rating:
+		prediction = user.predict_rating(movie)
+		effective_rating = prediction
+	else:
+		effective_rating = user_rating.rating
+
+	the_eye = db_session.query(User).filter_by(email="theeye@ofjudgement.com").one()
+	eye_rating = db_session.query(Rating).filter_by(user_id=the_eye.id, movie_id=movie_id).first()
+
+	if not eye_rating:
+		eye_rating = the_eye.predict_rating(movie)
+	else:
+		eye_rating = eye_rating.rating
+
+	difference = abs(eye_rating - effective_rating)
+	#End prediction
+
+	return render_template("movie.html", movie=movie,
+		average=avg_rating, user_rating=user_rating,
+		prediction=prediction)
+
+	messages = [ "I suppose you don't have such bad taste after all.",
+             "I regret every decision that I've ever made that has brought me to listen to your opinion.",
+             "Words fail me, as your taste in movies has clearly failed you.",
+             "That movie is great. For a clown to watch. Idiot."]
+
+	beratement = messages[int(difference)]
 	
 
 
